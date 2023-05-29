@@ -55,6 +55,10 @@ def find_model_type(model_name):
         return 'starchat'
     elif re.match('.*starchat.*ggml.*\.bin', model_name_lower):
         return 'starchat'
+    elif len(list(path_to_model.glob('*replit*code*ggml*.bin'))) > 0:
+        return 'replitcodecpp'
+    elif re.match('.*replit.*code.*ggml.*\.bin', model_name_lower):
+        return 'replitcodecpp'
     elif len(list(path_to_model.glob('*ggml*.bin'))) > 0:
         return 'llamacpp'
     elif re.match('.*ggml.*\.bin', model_name_lower):
@@ -95,6 +99,8 @@ def load_model(model_name):
         load_func = starcodercpp_loader
     elif shared.model_type == 'starchat':
         load_func = starchatcpp_loader
+    elif shared.model_type == 'replitcodecpp':
+        load_func = replitcodecpp_loader
     elif shared.model_type == 'llamacpp':
         load_func = llamacpp_loader
     elif shared.model_type == 'rwkv':
@@ -314,6 +320,21 @@ def starchatcpp_loader(model_name):
 
     logger.info(f'starchat.cpp weights detected: {model_file}\n')
     model, tokenizer = StarcoderCppModel().from_pretrained(model_file)
+    return model, tokenizer
+
+def replitcodecpp_loader(model_name):
+    from modules.replit_code_model import ReplitCodeCppModel
+
+    path = Path(f'{shared.args.model_dir}/{model_name}')
+    if path.is_file():
+        model_file = path
+    else:
+        model_file = list(
+            Path(f'{shared.args.model_dir}/{model_name}').glob('*replit*code*ggml*.bin')
+        )[0]
+
+    logger.info(f'replitcode.cpp weights detected: {model_file}\n')
+    model, tokenizer = ReplitCodeCppModel().from_pretrained(model_file)
     return model, tokenizer
 
 
